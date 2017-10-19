@@ -35,25 +35,28 @@ def circularShift(binString, n):
 		shiftedBinString += binString[(i+n)%len(binString)];
 	return shiftedBinString;
 
-
-def genRoundKey1(keyBitString):
+def keyInitialPermutation(keyBitString) :
 	afterPermutedChoiceOne = ""
 	for index in PC_1:
 		afterPermutedChoiceOne += keyBitString[index-1]
-	afterLeftCircularShift = circularShift(afterPermutedChoiceOne, 1);
+	return afterPermutedChoiceOne;
+
+def genRoundKey(keyHexb):
+	afterLeftCircularShift = circularShift(keyHexb, 1);
 	afterPermutedChoiceTwo = ""
 	for index in PC_2:
 		afterPermutedChoiceTwo += afterLeftCircularShift[index-1]
-	return afterPermutedChoiceTwo
+	return (afterPermutedChoiceTwo, afterLeftCircularShift)
 
-def genL0R0(plainTextBitString):
-
+def initialPermutation(plainTextBitString):
 	afterInitPermuation = ""
 	for index in initPermutation:
 		afterInitPermuation += plainTextBitString[index-1]
+	return afterInitPermuation;
 
-	leftSide = afterInitPermuation[0:64/2]
-	rightSide = afterInitPermuation[64/2 : 64]
+def genL0R0(plainTextBitString):
+	leftSide = plainTextBitString[0:64/2]
+	rightSide = plainTextBitString[64/2 : 64]
 	return {"L0": leftSide, "R0": rightSide}
 
 def expandR0(r0BitString):
@@ -70,7 +73,6 @@ def xor(bitString1, bitString2):
 	return xoredString
 
 def sboxSubstitution(bitString):
-	
 	sets = [];
 	numSets = (len(bitString)+1)/6;
 
@@ -101,7 +103,8 @@ def permutationP(bitString):
 	for permutation in permutationTable:
 		permutedBinString += bitString[int(permutation)-1]
 	return permutedBinString
-def switchAndInversePermute(l1,r1):
+
+def finalSwitchAndInversePermute(l1,r1):
 	swapped = r1+l1;
 	c = ""
 	for permutation in inverseInitPermutation:
@@ -114,18 +117,20 @@ def padText(plainText):
 		plainText += plainText[i-l];#appending reverse of message to message for padding
 	return plainText
 
-def desRound(plainTextHex, keyHex):
-	plainTextBitString = hexStringToBitString(plainTextHex)
-	keyBitString = plainTextBitString;
-	roundKey1 = genRoundKey1(keyBitString);
-	l0R0 = genL0R0(plainTextBitString)
+def desRounds(inputTextb, keyHexb, r, n):
+	roundKey, circularShiftedKey = genRoundKey(keyHexb)
+	l0R0 = genL0R0(inputTextb)
 	expandedR0 = expandR0(l0R0["R0"])
-	a = xor(expandedR0, roundKey1)
+	a = xor(expandedR0, roundKey)
 	subs = sboxSubstitution(a)
 	permutated = permutationP(subs["subbed"])
 	r1 = xor(l0R0["L0"], permutated)
-	l1 = l0R0["R0"];
-	c = switchAndInversePermute(l1,r1);
+	l1 = l0R0["R0"]
+
+	if(r < n) :
+		return desRounds(l1 + r1, circularShiftedKey, r+1, n) 
+	
+	return finalSwitchAndInversePermute(l1,r1)
 	# print "Round Key 1 is ", roundKey1 							
 	# print l0R0 													
 	# print "After expansion R0 is" , expandedR0					
@@ -134,7 +139,15 @@ def desRound(plainTextHex, keyHex):
 	# print "R0 after going through sbox" , subs["subbed"]		
 	# print "P(B) is " , permutated								
 	# print "R1 is", r1 
-	return c;
+
+def des(plainTextHex, keyHex, numRounds):
+	plainTextBitString = hexStringToBitString(plainTextHex)
+	keyBitString = plainTextBitString;
+	initialPermutationb = initialPermutation(plainTextBitString);
+	keyInitialPermutationb = keyInitialPermutation(keyBitString);
+
+	c = desRounds(initialPermutationb, keyInitialPermutationb, 0, numRounds);
+	return c
 
 
 
@@ -143,6 +156,8 @@ def desRound(plainTextHex, keyHex):
 
 def main():
 	plainText = raw_input("Please enter a message (max 8 characters) : ")
+	n = int(raw_input("Please enter the number of rounds for DES : "))
+
 	if(len(plainText) < 8):
 		plainText = padText(plainText);
 	elif(len(plainText) > 8):
@@ -150,8 +165,8 @@ def main():
 		main();
 	plainTextHex = plainText.encode("hex")
 	keyHex = plainTextHex;
-	c = des(plainTextHex, keyHex)
-	d = des(c, keyHex)
+	c = des(plainTextHex, keyHex, n)
+	d = des(c, keyHex, n)
 
 	print "plain text padded"
 	print "plain text hex", plainTextHex									
