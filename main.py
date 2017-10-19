@@ -114,9 +114,8 @@ def padText(plainText):
 		plainText += plainText[i-l];#appending reverse of message to message for padding
 	return plainText
 
-def des(plainTextHex):
-	keyHex = plainTextHex;
-	plainTextBitString = hexStringToBitString(keyHex)
+def desRound(plainTextHex, keyHex):
+	plainTextBitString = hexStringToBitString(plainTextHex)
 	keyBitString = plainTextBitString;
 	roundKey1 = genRoundKey1(keyBitString);
 	l0R0 = genL0R0(plainTextBitString)
@@ -127,8 +126,6 @@ def des(plainTextHex):
 	r1 = xor(l0R0["L0"], permutated)
 	l1 = l0R0["R0"];
 	c = switchAndInversePermute(l1,r1);
-	return c;
-
 	# print "Round Key 1 is ", roundKey1 							
 	# print l0R0 													
 	# print "After expansion R0 is" , expandedR0					
@@ -137,6 +134,11 @@ def des(plainTextHex):
 	# print "R0 after going through sbox" , subs["subbed"]		
 	# print "P(B) is " , permutated								
 	# print "R1 is", r1 
+	return c;
+
+
+
+
 
 
 def main():
@@ -147,11 +149,15 @@ def main():
 		print "Too many characters"
 		main();
 	plainTextHex = plainText.encode("hex")
-	c = des(plainTextHex)
-	d = des(c)
+	keyHex = plainTextHex;
+	c = des(plainTextHex, keyHex)
+	d = des(c, keyHex)
 
-											
-	print "The encrypted message is ", c 
+	print "plain text padded"
+	print "plain text hex", plainTextHex									
+	print "cypher text hex   ", c 
+	print "decrypted hex", d
+	print "decrypted plain text", plainTextHex.decode("hex")
 
 
 main()
