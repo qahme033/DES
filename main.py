@@ -163,15 +163,16 @@ def main():
 	elif(len(plainText) > 8):
 		print "Too many characters"
 		main();
+
 	plainTextHex = plainText.encode("hex")
 	keyHex = plainTextHex;
-	c = des(plainTextHex, keyHex, n)
-	d = des(c, keyHex, n)
+	cypherText = des(plainTextHex, keyHex, n)
+	decryptedText = des(c, keyHex, n)
 
 	print "plain text padded"
 	print "plain text hex", plainTextHex									
-	print "cypher text hex   ", c 
-	print "decrypted hex", d
+	print "cypher text hex   ", cypherText
+	print "decrypted hex", decryptedText
 	print "decrypted plain text", plainTextHex.decode("hex")
 
 
